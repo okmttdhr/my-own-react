@@ -40,7 +40,7 @@ const isNew = (prev, next) => key =>
   prev[key] !== next[key]
 const isGone = (prev, next) => key => !(key in next)
 function updateDom(dom, prevProps, nextProps) {
-  //Remove old or changed event listeners
+  // Remove old or changed event listeners
   Object.keys(prevProps)
     .filter(isEvent)
     .filter(
@@ -108,12 +108,12 @@ function commitWork(fiber) {
   const domParent = domParentFiber.dom
 
   if (
-    fiber.effectTag === "PLACEMENT" &&
+    fiber.flag === "PLACEMENT" &&
     fiber.dom != null
   ) {
     domParent.appendChild(fiber.dom)
   } else if (
-    fiber.effectTag === "UPDATE" &&
+    fiber.flag === "UPDATE" &&
     fiber.dom != null
   ) {
     updateDom(
@@ -121,7 +121,7 @@ function commitWork(fiber) {
       fiber.alternate.props,
       fiber.props
     )
-  } else if (fiber.effectTag === "DELETION") {
+  } else if (fiber.flag === "DELETION") {
     commitDeletion(fiber, domParent)
   }
 
@@ -232,7 +232,7 @@ function reconcileChildren(workInProgressFiber, elements) {
         dom: oldFiber.dom,
         parent: workInProgressFiber,
         alternate: oldFiber,
-        effectTag: "UPDATE",
+        flag: "UPDATE",
       }
     }
     if (element && !sameType) {
@@ -242,11 +242,11 @@ function reconcileChildren(workInProgressFiber, elements) {
         dom: null,
         parent: workInProgressFiber,
         alternate: null,
-        effectTag: "PLACEMENT",
+        flag: "PLACEMENT",
       }
     }
     if (oldFiber && !sameType) {
-      oldFiber.effectTag = "DELETION"
+      oldFiber.flag = "DELETION"
       deletions.push(oldFiber)
     }
 
