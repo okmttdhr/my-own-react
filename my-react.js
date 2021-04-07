@@ -270,7 +270,7 @@ const MyReact = {
   render,
 }
 
-const text = createElement('mine')
+const text = 'mine'
 const a = createElement('a', {}, text)
 const p = createElement('p', {}, text)
 const h2 = createElement('h2', {}, text)
