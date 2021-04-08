@@ -1,3 +1,9 @@
+let nextUnitOfWork = null
+let currentRoot = null
+let workInProgressRoot = null
+let workInProgressFiber = null
+let deletions = null
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -20,17 +26,6 @@ function createTextElement(text) {
       children: [],
     },
   }
-}
-
-function createDom(fiber) {
-  const dom =
-    fiber.type == "TEXT_ELEMENT"
-      ? document.createTextNode("")
-      : document.createElement(fiber.type)
-
-  updateDom(dom, {}, fiber.props)
-
-  return dom
 }
 
 const isEvent = key => key.startsWith("on")
@@ -89,11 +84,12 @@ function updateDom(dom, prevProps, nextProps) {
     })
 }
 
-function commitRoot() {
-  deletions.forEach(commitWork)
-  commitWork(workInProgressRoot.child)
-  currentRoot = workInProgressRoot
-  workInProgressRoot = null
+function commitDeletion(fiber, parentDom) {
+  if (fiber.dom) {
+    parentDom.removeChild(fiber.dom)
+  } else {
+    commitDeletion(fiber.child, parentDom)
+  }
 }
 
 function commitWork(fiber) {
@@ -101,17 +97,17 @@ function commitWork(fiber) {
     return
   }
 
-  let domParentFiber = fiber.parent
-  while (!domParentFiber.dom) {
-    domParentFiber = domParentFiber.parent
+  let parentFiber = fiber.parent
+  while (!parentFiber.dom) {
+    parentFiber = parentFiber.parent
   }
-  const domParent = domParentFiber.dom
+  const parentDom = parentFiber.dom
 
   if (
     fiber.flag === "PLACEMENT" &&
     fiber.dom != null
   ) {
-    domParent.appendChild(fiber.dom)
+    parentDom.appendChild(fiber.dom)
   } else if (
     fiber.flag === "UPDATE" &&
     fiber.dom != null
@@ -122,89 +118,18 @@ function commitWork(fiber) {
       fiber.props
     )
   } else if (fiber.flag === "DELETION") {
-    commitDeletion(fiber, domParent)
+    commitDeletion(fiber, parentDom)
   }
 
   commitWork(fiber.child)
   commitWork(fiber.sibling)
 }
 
-function commitDeletion(fiber, domParent) {
-  if (fiber.dom) {
-    domParent.removeChild(fiber.dom)
-  } else {
-    commitDeletion(fiber.child, domParent)
-  }
-}
-
-function render(element, container) {
-  workInProgressRoot = {
-    dom: container,
-    props: {
-      children: [element],
-    },
-    alternate: currentRoot,
-  }
-  deletions = []
-  nextUnitOfWork = workInProgressRoot
-}
-
-let nextUnitOfWork = null
-let currentRoot = null
-let workInProgressRoot = null
-let deletions = null
-
-function workLoop(deadline) {
-  let shouldYield = false
-  while (nextUnitOfWork && !shouldYield) {
-    nextUnitOfWork = performUnitOfWork(
-      nextUnitOfWork
-    )
-    shouldYield = deadline.timeRemaining() < 1
-  }
-
-  if (!nextUnitOfWork && workInProgressRoot) {
-    commitRoot()
-  }
-
-  requestIdleCallback(workLoop)
-}
-
-requestIdleCallback(workLoop)
-
-function performUnitOfWork(fiber) {
-  const isFunctionComponent =
-    fiber.type instanceof Function
-  if (isFunctionComponent) {
-    updateFunctionComponent(fiber)
-  } else {
-    updateHostComponent(fiber)
-  }
-  if (fiber.child) {
-    return fiber.child
-  }
-  let nextFiber = fiber
-  while (nextFiber) {
-    if (nextFiber.sibling) {
-      return nextFiber.sibling
-    }
-    nextFiber = nextFiber.parent
-  }
-}
-
-let workInProgressFiber = null
-
-function updateFunctionComponent(fiber) {
-  workInProgressFiber = fiber
-  const children = [fiber.type(fiber.props)]
-  reconcileChildren(fiber, children)
-}
-
-function updateHostComponent(fiber) {
-  if (!fiber.dom) {
-    fiber.dom = createDom(fiber)
-  }
-  reconcileChildren(fiber, fiber.props.children)
+function commitRoot() {
+  deletions.forEach(commitWork)
+  commitWork(workInProgressRoot.child)
+  currentRoot = workInProgressRoot
+  workInProgressRoot = null
 }
 
 function reconcileChildren(workInProgressFiber, elements) {
@@ -263,6 +188,85 @@ function reconcileChildren(workInProgressFiber, elements) {
     prevSibling = newFiber
     index++
   }
+}
+
+function createDom(fiber) {
+  const dom =
+    fiber.type == "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : document.createElement(fiber.type)
+
+  updateDom(dom, {}, fiber.props)
+
+  return dom
+}
+
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber)
+  }
+  reconcileChildren(fiber, fiber.props.children)
+}
+
+function updateFunctionComponent(fiber) {
+  workInProgressFiber = fiber
+  const children = [fiber.type(fiber.props)]
+  reconcileChildren(fiber, children)
+}
+
+// https://github.com/facebook/react/blob/f8ef4ff571db3de73b0bfab566c1ce9d69c6582f/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1571-L1597
+function performUnitOfWork(fiber) {
+  const isFunctionComponent =
+    fiber.type instanceof Function
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
+  }
+
+  if (fiber.child) {
+    return fiber.child
+  }
+
+  // TODO: uncle
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+    nextFiber = nextFiber.parent
+  }
+}
+
+// https://github.com/facebook/react/blob/f8ef4ff571db3de73b0bfab566c1ce9d69c6582f/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1564-L1569
+function workLoop(deadline) {
+  let shouldYield = false
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(
+      nextUnitOfWork
+    )
+    shouldYield = deadline.timeRemaining() < 1
+  }
+
+  if (!nextUnitOfWork && workInProgressRoot) {
+    commitRoot()
+  }
+
+  requestIdleCallback(workLoop)
+}
+
+requestIdleCallback(workLoop)
+
+function render(element, container) {
+  workInProgressRoot = {
+    dom: container,
+    props: {
+      children: [element],
+    },
+    alternate: currentRoot,
+  }
+  deletions = []
+  nextUnitOfWork = workInProgressRoot
 }
 
 const MyReact = {
