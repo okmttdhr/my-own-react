@@ -15,7 +15,7 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map(child =>
-        typeof child === "object"
+        typeof child === 'object'
           ? child
           : createTextElement(child)
       ),
@@ -25,7 +25,7 @@ function createElement(type, props, ...children) {
 
 function createTextElement(text) {
   return {
-    type: "TEXT_ELEMENT",
+    type: 'TEXT_ELEMENT',
     props: {
       nodeValue: text,
       children: [],
@@ -33,9 +33,9 @@ function createTextElement(text) {
   }
 }
 
-const isEvent = key => key.startsWith("on")
+const isEvent = key => key.startsWith('on')
 const isProperty = key =>
-  key !== "children" && !isEvent(key)
+  key !== 'children' && !isEvent(key)
 const isNew = (prev, next) => key =>
   prev[key] !== next[key]
 const isGone = (prev, next) => key => !(key in next)
@@ -63,7 +63,7 @@ function updateDom(dom, prevProps, nextProps) {
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
     .forEach(name => {
-      dom[name] = ""
+      dom[name] = ''
     })
 
   // Set new or changed properties
@@ -197,8 +197,8 @@ function reconcileChildren(workInProgressFiber, elements) {
 
 function createDom(fiber) {
   const dom =
-    fiber.type == "TEXT_ELEMENT"
-      ? document.createTextNode("")
+    fiber.type == 'TEXT_ELEMENT'
+      ? document.createTextNode('')
       : document.createElement(fiber.type)
 
   updateDom(dom, {}, fiber.props)
@@ -287,5 +287,5 @@ const h1 = createElement('h1', {}, p, a)
 const div = createElement('div', {}, h1, h2)
 const element = createElement('div', null, div)
 
-const container = document.getElementById("root")
+const container = document.getElementById('root')
 MyReact.render(element, container)
