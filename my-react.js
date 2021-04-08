@@ -9,6 +9,7 @@ const PLACEMENT = 'PLACEMENT'
 const UPDATE = 'UPDATE'
 const DELETION = 'DELETION'
 
+// https://github.com/facebook/react/blob/master/packages/react/src/ReactElement.js#L349
 function createElement(type, props, ...children) {
   return {
     type,
@@ -39,6 +40,8 @@ const isProperty = key =>
 const isNew = (prev, next) => key =>
   prev[key] !== next[key]
 const isGone = (prev, next) => key => !(key in next)
+
+// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMComponent.js#L334
 function updateDom(dom, prevProps, nextProps) {
   // Remove old or changed event listeners
   Object.keys(prevProps)
@@ -89,6 +92,7 @@ function updateDom(dom, prevProps, nextProps) {
     })
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1797
 function commitDeletion(fiber, parentDom) {
   if (fiber.dom) {
     parentDom.removeChild(fiber.dom)
@@ -97,6 +101,7 @@ function commitDeletion(fiber, parentDom) {
   }
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1814
 function commitWork(fiber) {
   if (!fiber) {
     return
@@ -130,6 +135,7 @@ function commitWork(fiber) {
   commitWork(fiber.sibling)
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1693
 function commitRoot() {
   deletions.forEach(commitWork)
   commitWork(workInProgressRoot.child)
@@ -137,6 +143,7 @@ function commitRoot() {
   workInProgressRoot = null
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L255
 function reconcileChildren(workInProgressFiber, elements) {
   let index = 0
   let oldFiber =
@@ -206,6 +213,7 @@ function createDom(fiber) {
   return dom
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L1230
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber)
@@ -213,13 +221,14 @@ function updateHostComponent(fiber) {
   reconcileChildren(fiber, fiber.props.children)
 }
 
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L865
 function updateFunctionComponent(fiber) {
   workInProgressFiber = fiber
   const children = [fiber.type(fiber.props)]
   reconcileChildren(fiber, children)
 }
 
-// https://github.com/facebook/react/blob/f8ef4ff571db3de73b0bfab566c1ce9d69c6582f/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1571-L1597
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1571
 function performUnitOfWork(fiber) {
   const isFunctionComponent =
     fiber.type instanceof Function
@@ -243,7 +252,7 @@ function performUnitOfWork(fiber) {
   }
 }
 
-// https://github.com/facebook/react/blob/f8ef4ff571db3de73b0bfab566c1ce9d69c6582f/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1564-L1569
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1564
 function workLoop(deadline) {
   let shouldYield = false
   while (nextUnitOfWork && !shouldYield) {
@@ -262,6 +271,7 @@ function workLoop(deadline) {
 
 requestIdleCallback(workLoop)
 
+// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMLegacy.js#L287
 function render(element, container) {
   workInProgressRoot = {
     dom: container,
