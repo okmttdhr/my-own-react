@@ -34,115 +34,6 @@ function createTextElement(text) {
   }
 }
 
-const isEvent = key => key.startsWith('on')
-const isProperty = key =>
-  key !== 'children' && !isEvent(key)
-const isNew = (prev, next) => key =>
-  prev[key] !== next[key]
-const isGone = (prev, next) => key => !(key in next)
-
-// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMComponent.js#L334
-function updateDom(dom, prevProps, nextProps) {
-  // Remove old or changed event listeners
-  Object.keys(prevProps)
-    .filter(isEvent)
-    .filter(
-      key =>
-        !(key in nextProps) ||
-        isNew(prevProps, nextProps)(key)
-    )
-    .forEach(name => {
-      const eventType = name
-        .toLowerCase()
-        .substring(2)
-      dom.removeEventListener(
-        eventType,
-        prevProps[name]
-      )
-    })
-
-  // Remove old properties
-  Object.keys(prevProps)
-    .filter(isProperty)
-    .filter(isGone(prevProps, nextProps))
-    .forEach(name => {
-      dom[name] = ''
-    })
-
-  // Set new or changed properties
-  Object.keys(nextProps)
-    .filter(isProperty)
-    .filter(isNew(prevProps, nextProps))
-    .forEach(name => {
-      dom[name] = nextProps[name]
-    })
-
-  // Add event listeners
-  Object.keys(nextProps)
-    .filter(isEvent)
-    .filter(isNew(prevProps, nextProps))
-    .forEach(name => {
-      const eventType = name
-        .toLowerCase()
-        .substring(2)
-      dom.addEventListener(
-        eventType,
-        nextProps[name]
-      )
-    })
-}
-
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1797
-function commitDeletion(fiber, parentDom) {
-  if (fiber.dom) {
-    parentDom.removeChild(fiber.dom)
-  } else {
-    commitDeletion(fiber.child, parentDom)
-  }
-}
-
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1814
-function commitWork(fiber) {
-  if (!fiber) {
-    return
-  }
-
-  let parentFiber = fiber.parent
-  while (!parentFiber.dom) {
-    parentFiber = parentFiber.parent
-  }
-  const parentDom = parentFiber.dom
-
-  if (
-    fiber.flag === PLACEMENT &&
-    fiber.dom != null
-  ) {
-    parentDom.appendChild(fiber.dom)
-  } else if (
-    fiber.flag === UPDATE &&
-    fiber.dom != null
-  ) {
-    updateDom(
-      fiber.dom,
-      fiber.alternate.props,
-      fiber.props
-    )
-  } else if (fiber.flag === DELETION) {
-    commitDeletion(fiber, parentDom)
-  }
-
-  commitWork(fiber.child)
-  commitWork(fiber.sibling)
-}
-
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1693
-function commitRoot() {
-  deletions.forEach(commitWork)
-  commitWork(workInProgressRoot.child)
-  currentRoot = workInProgressRoot
-  workInProgressRoot = null
-}
-
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L255
 function reconcileChildren(workInProgressFiber, elements) {
   let index = 0
@@ -202,6 +93,64 @@ function reconcileChildren(workInProgressFiber, elements) {
   }
 }
 
+const isEvent = key => key.startsWith('on')
+const isProperty = key =>
+  key !== 'children' && !isEvent(key)
+const isNew = (prev, next) => key =>
+  prev[key] !== next[key]
+const isGone = (prev, next) => key => !(key in next)
+
+// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMComponent.js#L334
+function updateDom(dom, prevProps, nextProps) {
+  // Remove old or changed event listeners
+  Object.keys(prevProps)
+    .filter(isEvent)
+    .filter(
+      key =>
+        !(key in nextProps) ||
+        isNew(prevProps, nextProps)(key)
+    )
+    .forEach(name => {
+      const eventType = name
+        .toLowerCase()
+        .substring(2)
+      dom.removeEventListener(
+        eventType,
+        prevProps[name]
+      )
+    })
+
+  // Remove old properties
+  Object.keys(prevProps)
+    .filter(isProperty)
+    .filter(isGone(prevProps, nextProps))
+    .forEach(name => {
+      dom[name] = ''
+    })
+
+  // Set new or changed properties
+  Object.keys(nextProps)
+    .filter(isProperty)
+    .filter(isNew(prevProps, nextProps))
+    .forEach(name => {
+      dom[name] = nextProps[name]
+    })
+
+  // Add event listeners
+  Object.keys(nextProps)
+    .filter(isEvent)
+    .filter(isNew(prevProps, nextProps))
+    .forEach(name => {
+      const eventType = name
+        .toLowerCase()
+        .substring(2)
+      dom.addEventListener(
+        eventType,
+        nextProps[name]
+      )
+    })
+}
+
 function createDom(fiber) {
   const dom =
     fiber.type == 'TEXT_ELEMENT'
@@ -250,6 +199,57 @@ function performUnitOfWork(fiber) {
     }
     nextFiber = nextFiber.parent
   }
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1797
+function commitDeletion(fiber, parentDom) {
+  if (fiber.dom) {
+    parentDom.removeChild(fiber.dom)
+  } else {
+    commitDeletion(fiber.child, parentDom)
+  }
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1814
+function commitWork(fiber) {
+  if (!fiber) {
+    return
+  }
+
+  let parentFiber = fiber.parent
+  while (!parentFiber.dom) {
+    parentFiber = parentFiber.parent
+  }
+  const parentDom = parentFiber.dom
+
+  if (
+    fiber.flag === PLACEMENT &&
+    fiber.dom != null
+  ) {
+    parentDom.appendChild(fiber.dom)
+  } else if (
+    fiber.flag === UPDATE &&
+    fiber.dom != null
+  ) {
+    updateDom(
+      fiber.dom,
+      fiber.alternate.props,
+      fiber.props
+    )
+  } else if (fiber.flag === DELETION) {
+    commitDeletion(fiber, parentDom)
+  }
+
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1693
+function commitRoot() {
+  deletions.forEach(commitWork)
+  commitWork(workInProgressRoot.child)
+  currentRoot = workInProgressRoot
+  workInProgressRoot = null
 }
 
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1564
