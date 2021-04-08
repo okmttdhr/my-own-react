@@ -1,8 +1,13 @@
-let nextUnitOfWork = null
 let currentRoot = null
-let workInProgressRoot = null
-let workInProgressFiber = null
 let deletions = null
+let nextUnitOfWork = null
+let workInProgressFiber = null
+let workInProgressRoot = null
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberFlags.js#L19-L22
+const PLACEMENT = 'PLACEMENT'
+const UPDATE = 'UPDATE'
+const DELETION = 'DELETION'
 
 function createElement(type, props, ...children) {
   return {
@@ -104,12 +109,12 @@ function commitWork(fiber) {
   const parentDom = parentFiber.dom
 
   if (
-    fiber.flag === "PLACEMENT" &&
+    fiber.flag === PLACEMENT &&
     fiber.dom != null
   ) {
     parentDom.appendChild(fiber.dom)
   } else if (
-    fiber.flag === "UPDATE" &&
+    fiber.flag === UPDATE &&
     fiber.dom != null
   ) {
     updateDom(
@@ -117,7 +122,7 @@ function commitWork(fiber) {
       fiber.alternate.props,
       fiber.props
     )
-  } else if (fiber.flag === "DELETION") {
+  } else if (fiber.flag === DELETION) {
     commitDeletion(fiber, parentDom)
   }
 
@@ -157,7 +162,7 @@ function reconcileChildren(workInProgressFiber, elements) {
         dom: oldFiber.dom,
         parent: workInProgressFiber,
         alternate: oldFiber,
-        flag: "UPDATE",
+        flag: UPDATE,
       }
     }
     if (element && !sameType) {
@@ -167,11 +172,11 @@ function reconcileChildren(workInProgressFiber, elements) {
         dom: null,
         parent: workInProgressFiber,
         alternate: null,
-        flag: "PLACEMENT",
+        flag: PLACEMENT,
       }
     }
     if (oldFiber && !sameType) {
-      oldFiber.flag = "DELETION"
+      oldFiber.flag = DELETION
       deletions.push(oldFiber)
     }
 
