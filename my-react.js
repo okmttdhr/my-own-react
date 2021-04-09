@@ -175,8 +175,8 @@ function updateFunctionComponent(fiber) {
   reconcileChildren(fiber, children)
 }
 
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1571
-function performUnitOfWork(fiber) {
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L3206
+function beginWork(fiber) {
   const isFunctionComponent =
     fiber.type instanceof Function
   if (isFunctionComponent) {
@@ -255,24 +255,24 @@ function commitRoot() {
   workInProgressRoot = null
 }
 
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1564
-function workLoop(deadline) {
-  let shouldYield = false
-  while (nextUnitOfWork && !shouldYield) {
-    nextUnitOfWork = performUnitOfWork(
-      nextUnitOfWork
-    )
-    shouldYield = deadline.timeRemaining() < 1
-  }
-
-  if (!nextUnitOfWork && workInProgressRoot) {
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1574
+function performUnitOfWork(fiber) {
+  nextUnitOfWork = beginWork(fiber)
+  if (!nextUnitOfWork) {
     commitRoot()
   }
-
-  requestIdleCallback(workLoop)
 }
 
-requestIdleCallback(workLoop)
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1567
+function workLoop(deadline) {
+  let shouldYield = false
+  // while (nextUnitOfWork && !shouldYield) {
+  while (workInProgressRoot && !shouldYield) {
+    performUnitOfWork(nextUnitOfWork)
+    shouldYield = deadline.timeRemaining() < 1
+  }
+  requestIdleCallback(workLoop)
+}
 
 // https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMLegacy.js#L287
 function render(element, container) {
@@ -285,6 +285,8 @@ function render(element, container) {
   }
   deletions = []
   nextUnitOfWork = workInProgressRoot
+
+  requestIdleCallback(workLoop)
 }
 
 const MyReact = {
