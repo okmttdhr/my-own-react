@@ -150,19 +150,14 @@ function commitUpdate(dom, prevProps, nextProps) {
     })
 }
 
-function createDom(fiber) {
-  const dom =
-    fiber.type == 'TEXT_ELEMENT'
-      ? document.createTextNode('')
-      : document.createElement(fiber.type)
-
-  return dom
-}
-
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L1230
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
-    fiber.dom = createDom(fiber)
+    const dom =
+      fiber.type == 'TEXT_ELEMENT'
+        ? document.createTextNode('')
+        : document.createElement(fiber.type)
+    fiber.dom = dom
     commitUpdate(fiber.dom, {}, fiber.props)
   }
   reconcileChildren(fiber, fiber.props.children)
@@ -295,12 +290,19 @@ const MyReact = {
 }
 
 const text = 'mine'
+
 const a = createElement('a', {}, text)
 const p = createElement('p', {}, text)
+
 const h2 = createElement('h2', {}, text)
 const h1 = createElement('h1', {}, p, a)
-const div = createElement('div', {}, h1, h2)
-const element = createElement('div', null, div)
+
+const child3 = createElement('div', {}, h1, h2)
+const child2 = createElement('div', {}, h1, h2)
+
+const child = createElement('div', {}, child2, child3)
+
+const element = createElement('div', null, child)
 
 const container = document.getElementById('root')
 MyReact.render(element, container)
