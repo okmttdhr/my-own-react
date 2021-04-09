@@ -99,8 +99,8 @@ const isNew = (prev, next) => key =>
   prev[key] !== next[key]
 const isGone = (prev, next) => key => !(key in next)
 
-// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMComponent.js#L334
-function updateDom(dom, prevProps, nextProps) {
+// https://github.com/okmttdhr/react/blob/master/packages/react-dom/src/client/ReactDOMHostConfig.js#L445
+function commitUpdate(dom, prevProps, nextProps) {
   // Remove old or changed event listeners
   Object.keys(prevProps)
     .filter(isEvent)
@@ -156,7 +156,7 @@ function createDom(fiber) {
       ? document.createTextNode('')
       : document.createElement(fiber.type)
 
-  updateDom(dom, {}, fiber.props)
+  commitUpdate(dom, {}, fiber.props)
 
   return dom
 }
@@ -230,7 +230,7 @@ function commitWork(fiber) {
     fiber.flag === UPDATE &&
     fiber.dom != null
   ) {
-    updateDom(
+    commitUpdate(
       fiber.dom,
       fiber.alternate.props,
       fiber.props
