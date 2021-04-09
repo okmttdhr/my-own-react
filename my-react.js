@@ -92,6 +92,11 @@ function reconcileChildren(workInProgressFiber, elements) {
   }
 }
 
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1558
+function commitPlacement(fiber, parentDom) {
+  parentDom.appendChild(fiber.dom)
+}
+
 const isEvent = key => key.startsWith('on')
 const isProperty = key =>
   key !== 'children' && !isEvent(key)
@@ -150,55 +155,6 @@ function commitUpdate(dom, prevProps, nextProps) {
     })
 }
 
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L1230
-function updateHostComponent(fiber) {
-  if (!fiber.dom) {
-    const dom =
-      fiber.type == 'TEXT_ELEMENT'
-        ? document.createTextNode('')
-        : document.createElement(fiber.type)
-    fiber.dom = dom
-    commitUpdate(fiber.dom, {}, fiber.props)
-  }
-  reconcileChildren(fiber, fiber.props.children)
-}
-
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L865
-function updateFunctionComponent(fiber) {
-  workInProgressFiber = fiber
-  const children = [fiber.type(fiber.props)]
-  reconcileChildren(fiber, children)
-}
-
-// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L3206
-function beginWork(fiber) {
-  const isFunctionComponent =
-    fiber.type instanceof Function
-  if (isFunctionComponent) {
-    updateFunctionComponent(fiber)
-  } else {
-    updateHostComponent(fiber)
-  }
-
-  if (fiber.child) {
-    return fiber.child
-  }
-
-  // TODO: uncle
-  let nextFiber = fiber
-  while (nextFiber) {
-    if (nextFiber.sibling) {
-      return nextFiber.sibling
-    }
-    nextFiber = nextFiber.parent
-  }
-}
-
-// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1558
-function commitPlacement(fiber, parentDom) {
-  parentDom.appendChild(fiber.dom)
-}
-
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1795
 function commitDeletion(fiber, parentDom) {
   if (fiber.dom) {
@@ -246,6 +202,50 @@ function commitWork(fiber) {
 function commitRoot() {
   deletions.forEach(commitWork)
   commitWork(workInProgressRoot.child)
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L1230
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    const dom =
+      fiber.type == 'TEXT_ELEMENT'
+        ? document.createTextNode('')
+        : document.createElement(fiber.type)
+    fiber.dom = dom
+    commitUpdate(fiber.dom, {}, fiber.props)
+  }
+  reconcileChildren(fiber, fiber.props.children)
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L865
+function updateFunctionComponent(fiber) {
+  workInProgressFiber = fiber
+  const children = [fiber.type(fiber.props)]
+  reconcileChildren(fiber, children)
+}
+
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L3206
+function beginWork(fiber) {
+  const isFunctionComponent =
+    fiber.type instanceof Function
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
+  }
+
+  if (fiber.child) {
+    return fiber.child
+  }
+
+  // TODO: uncle
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+    nextFiber = nextFiber.parent
+  }
 }
 
 // https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1599
