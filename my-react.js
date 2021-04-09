@@ -156,8 +156,6 @@ function createDom(fiber) {
       ? document.createTextNode('')
       : document.createElement(fiber.type)
 
-  commitUpdate(dom, {}, fiber.props)
-
   return dom
 }
 
@@ -165,6 +163,7 @@ function createDom(fiber) {
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber)
+    commitUpdate(fiber.dom, {}, fiber.props)
   }
   reconcileChildren(fiber, fiber.props.children)
 }
@@ -200,7 +199,12 @@ function performUnitOfWork(fiber) {
   }
 }
 
-// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1797
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1558
+function commitPlacement(fiber, parentDom) {
+  parentDom.appendChild(fiber.dom)
+}
+
+// https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.new.js#L1795
 function commitDeletion(fiber, parentDom) {
   if (fiber.dom) {
     parentDom.removeChild(fiber.dom)
@@ -225,7 +229,7 @@ function commitWork(fiber) {
     fiber.flag === PLACEMENT &&
     fiber.dom != null
   ) {
-    parentDom.appendChild(fiber.dom)
+    commitPlacement(fiber, parentDom)
   } else if (
     fiber.flag === UPDATE &&
     fiber.dom != null
