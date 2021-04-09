@@ -246,6 +246,10 @@ function commitWork(fiber) {
 function commitRoot() {
   deletions.forEach(commitWork)
   commitWork(workInProgressRoot.child)
+}
+
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L1599
+function completeUnitOfWork() {
   currentRoot = workInProgressRoot
   workInProgressRoot = null
 }
@@ -255,6 +259,7 @@ function performUnitOfWork(fiber) {
   nextUnitOfWork = beginWork(fiber)
   if (!nextUnitOfWork) {
     commitRoot()
+    completeUnitOfWork()
   }
 }
 
