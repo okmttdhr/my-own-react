@@ -14,3 +14,4 @@ Resources;
 
 - https://reactjs.org/docs/codebase-overview.html#fiber-reconciler
 - https://github.com/facebook/react/issues/7942
+- https://github.com/pomber/didact
