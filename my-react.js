@@ -1,7 +1,6 @@
 let currentRoot = null
 let deletions = null
 let nextUnitOfWork = null
-let workInProgressFiber = null
 let workInProgressRoot = null
 
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberFlags.js#L19-L22
@@ -219,7 +218,6 @@ function updateHostComponent(fiber) {
 
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberBeginWork.new.js#L865
 function updateFunctionComponent(fiber) {
-  workInProgressFiber = fiber
   const children = [fiber.type(fiber.props)]
   reconcileChildren(fiber, children)
 }
