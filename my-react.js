@@ -238,7 +238,6 @@ function beginWork(fiber) {
     return fiber.child
   }
 
-  // TODO: uncle
   let nextFiber = fiber
   while (nextFiber) {
     if (nextFiber.sibling) {
@@ -274,19 +273,29 @@ function workLoop(deadline) {
   requestIdleCallback(workLoop)
 }
 
-// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMLegacy.js#L287
-function render(element, container) {
-  workInProgressRoot = {
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.new.js#L456
+function scheduleUpdateOnFiber(fiber) {
+  workInProgressRoot = fiber
+  deletions = []
+  nextUnitOfWork = fiber
+  requestIdleCallback(workLoop)
+}
+
+// https://github.com/okmttdhr/react/blob/master/packages/react-reconciler/src/ReactFiberReconciler.new.js#L262
+function updateContainer(element, container) {
+  const fiber = {
     dom: container,
     props: {
       children: [element],
     },
     alternate: currentRoot,
   }
-  deletions = []
-  nextUnitOfWork = workInProgressRoot
+  scheduleUpdateOnFiber(fiber)
+}
 
-  requestIdleCallback(workLoop)
+// https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOMLegacy.js#L287
+function render(element, container) {
+  updateContainer(element, container)
 }
 
 const MyReact = {
@@ -296,14 +305,14 @@ const MyReact = {
 
 const text = 'mine'
 
-const a = createElement('a', {}, text)
+const a = createElement('a', { href: '#' }, text)
 const p = createElement('p', {}, text)
 
 const h2 = createElement('h2', {}, text)
-const h1 = createElement('h1', {}, p, a)
+const h1 = createElement('h1', {}, text)
 
-const child3 = createElement('div', {}, h1, h2)
-const child2 = createElement('div', {}, h1, h2)
+const child3 = createElement('div', {}, h2, p, a)
+const child2 = createElement('div', {}, h1, p, p, a)
 
 const child = createElement('div', {}, child2, child3)
 
