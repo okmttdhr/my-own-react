@@ -263,7 +263,6 @@ function performUnitOfWork(fiber) {
 // https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberWorkLoop.old.js#L1567
 function workLoop(deadline) {
   let shouldYield = false
-  // while (nextUnitOfWork && !shouldYield) {
   while (workInProgressRoot && !shouldYield) {
     performUnitOfWork(nextUnitOfWork)
     shouldYield = deadline.timeRemaining() < 1
